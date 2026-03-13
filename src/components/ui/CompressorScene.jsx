@@ -521,16 +521,16 @@ function Scene({ hovered }) {
 
   return (
     <>
-      <ambientLight intensity={1.0} color="#aac8e0"/>
-      <directionalLight position={[6,10,6]} intensity={3.0} castShadow color="#ffffff"
+      <ambientLight intensity={1.8} color="#c8e0ff"/>
+      <directionalLight position={[6,10,6]} intensity={4.5} castShadow color="#ffffff"
         shadow-mapSize={[2048,2048]}
         shadow-camera-near={0.5} shadow-camera-far={24}
         shadow-camera-left={-5} shadow-camera-right={5}
         shadow-camera-top={5} shadow-camera-bottom={-5}/>
       <directionalLight position={[-5,4,-3]} intensity={1.8} color="#4488ff"/>
       <directionalLight position={[2,-3,4]}  intensity={1.2} color="#00aaff"/>
-      <pointLight position={[0,0.5,5.5]} intensity={3.8} color="#ffffff" distance={12} decay={2}/>
-      <pointLight position={[3,3,4]}    intensity={4.5} color="#00d4ff" distance={10} decay={2}/>
+      <pointLight position={[0,0.5,5.5]} intensity={6.0} color="#ffffff" distance={14} decay={2}/>
+      <pointLight position={[3,3,4]}    intensity={6.5} color="#00d4ff" distance={12} decay={2}/>
       <pointLight position={[-4,-2,3]}  intensity={3.0} color="#3b82f6" distance={9}  decay={2}/>
       <pointLight position={[0,6,0]}    intensity={2.0} color="#aaddff" distance={10} decay={2}/>
       <spotLight position={[0,8,3]} angle={0.45} intensity={5.0}
@@ -590,7 +590,7 @@ export default function CompressorScene({ height = '100%' }) {
       <Canvas shadows
         camera={{position:[0.0, 0.0, 10.5], fov:42}}
         gl={{antialias:true, toneMapping:THREE.ACESFilmicToneMapping,
-             toneMappingExposure:1.65, powerPreference:'high-performance', alpha:true}}
+             toneMappingExposure:2.20, powerPreference:'high-performance', alpha:true}}
         style={{width:'100%',height:'100%',background:'transparent'}}>
         <Suspense fallback={null}>
           <Scene hovered={hovered}/>
