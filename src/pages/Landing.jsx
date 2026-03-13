@@ -52,7 +52,7 @@ export default function Landing() {
   const { isAuthenticated } = useAuthStore()
   const heroRef = useRef(null)
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
-  // heroY removed — was causing model misposition on load
+  const heroY       = useTransform(scrollYProgress, [0, 1], [0, -80])
   const heroOpacity = useTransform(scrollYProgress, [0, 0.7], [1, 0])
 
   const handleStart = () => navigate(isAuthenticated ? '/dashboard' : '/register')
@@ -85,14 +85,14 @@ export default function Landing() {
       </nav>
 
       {/* ── HERO ── */}
-      <section ref={heroRef} className="relative min-h-screen flex items-center pt-20">
+      <section ref={heroRef} className="relative h-screen flex items-center overflow-hidden">
         <div className="absolute inset-0 bg-grid opacity-60" />
         <div className="absolute top-1/4 left-1/6 w-[500px] h-[500px] bg-yellow-400/4 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute bottom-1/4 right-1/6 w-[400px] h-[400px] bg-cyan-400/5 rounded-full blur-[80px] pointer-events-none" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/3 rounded-full blur-[120px] pointer-events-none" />
 
-        <motion.div style={{ opacity: heroOpacity, pointerEvents: "auto" }}
-          className="max-w-7xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-center">
+        <motion.div style={{ y: heroY, opacity: heroOpacity, pointerEvents: 'auto' }}
+          className="max-w-7xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-center pt-16">
 
           {/* Left text */}
           <motion.div initial={{ opacity:0, x:-50 }} animate={{ opacity:1, x:0 }}
