@@ -52,7 +52,7 @@ export default function Landing() {
   const { isAuthenticated } = useAuthStore()
   const heroRef = useRef(null)
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
-  const heroY       = useTransform(scrollYProgress, [0, 1], [0, -80])
+  // heroY removed — was causing model misposition on load
   const heroOpacity = useTransform(scrollYProgress, [0, 0.7], [1, 0])
 
   const handleStart = () => navigate(isAuthenticated ? '/dashboard' : '/register')
@@ -73,12 +73,12 @@ export default function Landing() {
               <div className="text-yellow-400/60 text-[9px] font-mono -mt-0.5 tracking-widest">INDUSTRIAL OPTIMIZER</div>
             </div>
           </div>
-          <div className="flex items-center gap-2 md:gap-3">
+          <div className="flex items-center gap-2">
             <button onClick={() => navigate('/tutorial')}
-              className="hidden sm:block text-slate-400 hover:text-white transition-colors text-sm font-display px-4 py-2 hover:bg-white/5 rounded-lg">
+              className="text-slate-400 hover:text-white transition-colors text-sm font-display px-4 py-2 hover:bg-white/5 rounded-lg">
               Tutorial
             </button>
-            <button onClick={() => navigate("/login")} className="hidden sm:flex btn-ghost text-sm py-2 px-4">Login</button>
+            <button onClick={() => navigate('/login')} className="btn-ghost text-sm py-2 px-4">Login</button>
             <button onClick={() => navigate('/register')} className="btn-primary text-sm py-2 px-5">Get Started</button>
           </div>
         </div>
@@ -91,8 +91,8 @@ export default function Landing() {
         <div className="absolute bottom-1/4 right-1/6 w-[400px] h-[400px] bg-cyan-400/5 rounded-full blur-[80px] pointer-events-none" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/3 rounded-full blur-[120px] pointer-events-none" />
 
-        <motion.div style={{ y: heroY, opacity: heroOpacity, pointerEvents: 'auto' }}
-          className="max-w-7xl mx-auto px-4 md:px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+        <motion.div style={{ opacity: heroOpacity, pointerEvents: "auto" }}
+          className="max-w-7xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-center">
 
           {/* Left text */}
           <motion.div initial={{ opacity:0, x:-50 }} animate={{ opacity:1, x:0 }}
@@ -107,11 +107,11 @@ export default function Landing() {
 
             <h1 className="font-display font-900 leading-[1.05] mb-5">
               <motion.span initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.3 }}
-                className="block text-white text-4xl md:text-5xl lg:text-6xl">Industrial</motion.span>
+                className="block text-white text-5xl lg:text-6xl">Industrial</motion.span>
               <motion.span initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.4 }}
-                className="block gradient-text-yellow text-4xl md:text-5xl lg:text-7xl neon-yellow">Air Compressor</motion.span>
+                className="block gradient-text-yellow text-5xl lg:text-7xl neon-yellow">Air Compressor</motion.span>
               <motion.span initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.5 }}
-                className="block text-white text-4xl md:text-5xl lg:text-6xl">Optimizer</motion.span>
+                className="block text-white text-5xl lg:text-6xl">Optimizer</motion.span>
             </h1>
 
             <motion.p initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.6 }}
@@ -124,22 +124,22 @@ export default function Landing() {
             </motion.p>
 
             <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.7 }}
-              className="flex flex-wrap gap-3 mb-8 relative" style={{ zIndex: 10 }}>
+              className="flex flex-wrap gap-4 mb-10 relative" style={{ zIndex: 10 }}>
               <motion.button whileHover={{ scale:1.03, y:-2 }} whileTap={{ scale:0.97 }}
                 onClick={handleStart}
-                className="btn-primary flex items-center gap-2 text-sm md:text-base px-6 md:px-8 py-3 md:py-4">
+                className="btn-primary flex items-center gap-2 text-base px-8 py-4">
                 Start Optimizing <ChevronRight size={18} />
               </motion.button>
               <motion.button whileHover={{ scale:1.03, y:-2 }} whileTap={{ scale:0.97 }}
                 onClick={() => navigate('/tutorial')}
-                className="btn-ghost-yellow flex items-center gap-2 text-sm md:text-base px-6 md:px-8 py-3 md:py-4">
+                className="btn-ghost-yellow flex items-center gap-2 text-base px-8 py-4">
                 Watch Tutorial <ArrowRight size={16} />
               </motion.button>
             </motion.div>
 
             {/* Stats */}
             <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.9 }}
-              className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-5 border-t border-white/5">
+              className="grid grid-cols-4 gap-4 pt-5 border-t border-white/5">
               {[
                 { end:99.2, suffix:'%',    label:'Model Accuracy' },
                 { end:20,   suffix:'%+',   label:'Energy Saving'  },
@@ -175,7 +175,7 @@ export default function Landing() {
             <div className="relative w-full rounded-2xl overflow-hidden"
               style={{
                 aspectRatio: '1 / 1',
-                height: 'min(520px, 70vw)',
+                height: '520px',
                 maxHeight: '520px',
                 background: 'radial-gradient(ellipse at center, rgba(8,20,40,0.6) 0%, rgba(4,10,20,0.95) 100%)',
                 border: '1px solid rgba(0,212,255,0.1)',
@@ -190,7 +190,7 @@ export default function Landing() {
                 </div>
               }>
                 <div style={{ width:'100%', height:'100%', position:'absolute', inset:0, zIndex:0 }}>
-                  <CompressorScene height="100%" />
+                  <CompressorScene height="520px" />
                 </div>
               </Suspense>
 
@@ -339,7 +339,7 @@ export default function Landing() {
       {/* ── FOOTER ── */}
       <footer className="border-t border-white/5 py-8">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-slate-600 text-sm font-mono">
-          <div className="flex items-center gap-2 md:gap-3">
+          <div className="flex items-center gap-2">
             <Zap className="w-4 h-4 text-yellow-400/50" />
             <span>CompressorAI © 2026 — Industrial Optimization Platform</span>
           </div>
