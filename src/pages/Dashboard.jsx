@@ -136,6 +136,18 @@ function UnitCard({ unit, onUnlink, i }) {
 /* ── Admin Type Card (v5 — admin view) ─────────────────── */
 function AdminTypeCard({ type, i }) {
   const navigate = useNavigate()
+
+  const handleOptimize = async () => {
+    try {
+      const res = await api.get('/compressors/units/my')
+      const units = Array.isArray(res.data) ? res.data : (res.data?.results ?? [])
+      const match = units.find(u => u.type_id === type.id && u.is_active !== false)
+                 || units.find(u => u.is_active !== false)
+      if (match) navigate(`/analysis/${match.id}`)
+      else toast('No units linked yet.', { icon: '⚠️', style: { background:'#0d1a2e', color:'#e2e8f0' } })
+    } catch { toast.error('Could not load units.') }
+  }
+
   return (
     <motion.div
       initial={{ opacity:0, scale:0.95 }} animate={{ opacity:1, scale:1 }}
@@ -178,12 +190,31 @@ function AdminTypeCard({ type, i }) {
         {type.ml_model && <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />}
       </div>
 
-      <button className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-display font-600 text-sm transition-all"
-        style={{ background:'rgba(0,212,255,0.08)', border:'1px solid rgba(0,212,255,0.2)', color:'#00d4ff' }}
-        onMouseEnter={e => { e.currentTarget.style.background='rgba(0,212,255,0.15)' }}
-        onMouseLeave={e => { e.currentTarget.style.background='rgba(0,212,255,0.08)' }}>
-        <Settings size={15} /> Manage <ArrowRight size={13} />
-      </button>
+      <div className="grid grid-cols-3 gap-2">
+        <button onClick={e => { e.stopPropagation(); navigate('/admin') }}
+          className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-display font-600 text-sm transition-all"
+          style={{ background:'rgba(0,212,255,0.08)', border:'1px solid rgba(0,212,255,0.2)', color:'#00d4ff' }}
+          onMouseEnter={e => e.currentTarget.style.background='rgba(0,212,255,0.15)'}
+          onMouseLeave={e => e.currentTarget.style.background='rgba(0,212,255,0.08)'}>
+          <Settings size={13}/> Manage
+        </button>
+        <button onClick={e => { e.stopPropagation(); handleOptimize() }}
+          className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-display font-600 text-sm transition-all"
+          style={{ background:'rgba(250,204,21,0.08)', border:'1px solid rgba(250,204,21,0.2)', color:'#facc15' }}
+          onMouseEnter={e => e.currentTarget.style.background='rgba(250,204,21,0.15)'}
+          onMouseLeave={e => e.currentTarget.style.background='rgba(250,204,21,0.08)'}>
+          <BarChart3 size={13}/> Optimize
+        </button>
+        <button title="Coming Soon"
+          className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-display font-600 text-sm relative"
+          style={{ background:'rgba(148,163,184,0.05)', border:'1px solid rgba(148,163,184,0.12)', color:'#64748b', cursor:'not-allowed' }}>
+          <Wrench size={13}/> Maintain
+          <span className="absolute -top-2 -right-1 text-[9px] font-mono px-1.5 py-0.5 rounded-full"
+            style={{ background:'rgba(250,204,21,0.15)', color:'#facc15', border:'1px solid rgba(250,204,21,0.2)' }}>
+            Soon
+          </span>
+        </button>
+      </div>
     </motion.div>
   )
 }
