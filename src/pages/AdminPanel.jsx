@@ -164,7 +164,7 @@ export default function AdminPanel() {
   const [stats, setStats]     = useState(null)
   const [loading, setLoading] = useState(true)
   const [editingUser, setEdit] = useState(null)
-  const { isDefaultAdmin }    = useAuthStore()
+  const isDefaultAdmin = useAuthStore(state => !!state.user?.is_default_admin)
 
   const fetchData = async () => {
     setLoading(true)
@@ -341,7 +341,7 @@ export default function AdminPanel() {
           <div className="flex items-center gap-3 mb-2">
             <h2 className="font-display font-700 text-white text-xl">Compressor Types</h2>
             <span className="tag-yellow">{types.length} types</span>
-            {isDefaultAdmin() && (
+            {isDefaultAdmin && (
               <div className="ml-auto flex items-center gap-2 text-xs text-slate-500 font-mono px-3 py-1.5 rounded-xl"
                 style={{background:'rgba(250,204,21,0.06)',border:'1px solid rgba(250,204,21,0.15)'}}>
                 <Zap size={11} className="text-yellow-400"/> You can trigger ML retraining
@@ -354,7 +354,7 @@ export default function AdminPanel() {
               <p className="text-slate-500 text-sm">No compressor types yet.</p>
             </div>
           ) : types.map(t => (
-            <TypeRow key={t.id} type={t} isDefaultAdmin={isDefaultAdmin()} />
+            <TypeRow key={t.id} type={t} isDefaultAdmin={isDefaultAdmin} />
           ))}
         </div>
       )}
