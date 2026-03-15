@@ -56,6 +56,15 @@ const steps = [
     highlight: '→ Default values work for most Ingersoll Rand setups',
     visual: (
       <div className="space-y-3 font-mono text-sm">
+        {/* Reference label */}
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg mb-1"
+          style={{ background:'rgba(250,204,21,0.08)', border:'1px solid rgba(250,204,21,0.2)' }}>
+          <span className="text-yellow-400 text-xs">📌</span>
+          <span className="text-yellow-400 text-xs font-600">
+            Example values shown below are for Ingersoll Rand Siera SH-250.
+            Change them according to your compressor's nameplate / datasheet.
+          </span>
+        </div>
         {[
           ['Voltage (V)', '415V', '3-Phase inline voltage'],
           ['Power Factor', '0.9', 'cosφ — usually 0.85–1.0'],
