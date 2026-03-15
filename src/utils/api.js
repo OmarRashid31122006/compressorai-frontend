@@ -1,7 +1,7 @@
 import axios from "axios"
 
 // Backend URL (Replit deployment)
-const API_BASE_URL = "https://compressorai-backend--rashid4601161.replit.app"
+const API_BASE_URL = "https://compressorai--FPCL.replit.app"
 
 const api = axios.create({
   baseURL: API_BASE_URL,
