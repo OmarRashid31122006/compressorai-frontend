@@ -7,7 +7,8 @@ import api from '../utils/api'
 import {
   Upload, CheckCircle, XCircle, AlertTriangle, ChevronRight,
   Zap, Activity, TrendingDown, BarChart3, Download, RefreshCw,
-  Info, ChevronDown, ChevronUp, Database, Clock, Eye, Cpu, X, Copy
+  Info, ChevronDown, ChevronUp, Database, Clock, Eye, Cpu, X, Copy,
+  DollarSign, Bolt, Calendar
 } from 'lucide-react'
 import {
   LineChart, Line, BarChart, Bar, ScatterChart, Scatter,
@@ -133,13 +134,15 @@ export default function Analysis() {
   const [showAdvanced, setShowAdv]  = useState(false)
   const [params, setParams]         = useState({
     voltage:415, power_factor:0.9, compression_stages:2,
-    p_low:7, p_high:10, q_low:45.23, q_high:35.47
+    p_low:7, p_high:10, q_low:45.23, q_high:35.47,
+    // Cost savings params
+    hours_per_day:  24,
+    cost_per_kwh:   0,    // user must enter; 0 = show units only, no cost
+    operating_days: 365,
   })
 
   useEffect(() => {
     if (!unitId) { navigate('/dashboard'); return }
-    // ✅ Save last visited unit so Layout sidebar can navigate directly
-    localStorage.setItem('last_unit_id', unitId)
     api.get(`/compressors/units/${unitId}`)
       .then(r => setUnit(r.data))
       .catch(() => {})
@@ -230,6 +233,11 @@ export default function Analysis() {
         },
         user_params:    params,
         include_graphs: true,
+        // Cost fields for report
+        energy_saved_kwh:   results.energy_saved_kwh   || 0,
+        cost_saved_annual:  results.cost_saved_annual  || 0,
+        cost_saved_monthly: results.cost_saved_monthly || 0,
+        kw_saved:           results.kw_saved           || 0,
       }
       const res = await api.post(`/reports/${type}`, payload, { responseType: 'blob' })
       const url = URL.createObjectURL(new Blob([res.data]))
@@ -543,6 +551,59 @@ export default function Analysis() {
                 </AnimatePresence>
               </div>
 
+              {/* ── Cost Savings Parameters ── */}
+              <div className="card space-y-4">
+                <h3 className="font-display font-600 text-green-400 flex items-center gap-2">
+                  <DollarSign size={16}/> Cost Savings Parameters
+                </h3>
+                <p className="text-slate-500 text-xs">
+                  Enter your electricity tariff and operating hours to calculate annual cost savings.
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="label">Electricity Tariff</label>
+                    <div className="relative">
+                      <input type="number" step="0.01" min="0" className="input-field pr-20"
+                        placeholder="e.g. 35"
+                        value={params.cost_per_kwh || ''}
+                        onChange={e => setParams({...params, cost_per_kwh: +e.target.value})}/>
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-mono">
+                        per kWh
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 mt-1">PKR, USD, or any currency — leave 0 to skip cost</p>
+                  </div>
+                  <div>
+                    <label className="label">Operating Hours / Day</label>
+                    <div className="relative">
+                      <input type="number" step="1" min="1" max="24" className="input-field pr-16"
+                        value={params.hours_per_day}
+                        onChange={e => setParams({...params, hours_per_day: Math.min(24, Math.max(1, +e.target.value))})}/>
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-mono">
+                        h/day
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 mt-1">How many hours compressor runs daily</p>
+                  </div>
+                </div>
+                <div>
+                  <label className="label">Operating Days / Year</label>
+                  <div className="flex gap-3">
+                    {[365, 300, 250].map(d => (
+                      <button key={d} type="button"
+                        onClick={() => setParams({...params, operating_days: d})}
+                        className={`flex-1 py-2.5 rounded-xl border font-display font-600 text-sm transition-all ${
+                          params.operating_days === d
+                            ? 'bg-green-400/15 border-green-400/40 text-green-400'
+                            : 'border-white/10 text-slate-400 hover:border-white/20'
+                        }`}>
+                        {d} days
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               <div className="flex gap-3">
                 <button onClick={() => setStep('upload')} className="btn-ghost flex-1 py-2.5 text-sm">← Back</button>
                 <motion.button whileHover={{scale:1.01}} whileTap={{scale:0.98}} onClick={runAnalysis}
@@ -613,7 +674,7 @@ export default function Analysis() {
                 <ScoreGauge score={results.scores?.silhouette || 0} label="DBSCAN Silhouette" color={CYAN} />
                 <ScoreGauge score={results.scores?.r2          || 0} label="R² Score (GBR)"   color={BLUE} />
                 <ScoreGauge score={results.scores?.f1          || 0} label="F1 Score"         color={GREEN} />
-                <ScoreGauge score={results.scores?.convergence || 0} label="GA Convergence"   color={ORANGE} />
+                <ScoreGauge score={results.scores?.ga_convergence || results.scores?.convergence || 0} label="GA Convergence" color={ORANGE} />
               </div>
             </div>
 
@@ -632,6 +693,38 @@ export default function Analysis() {
                 </div>
               ))}
             </div>
+
+            {/* Cost Savings Card — shown only if cost_per_kwh > 0 */}
+            {results.cost_per_kwh > 0 && results.energy_saved_kwh > 0 && (
+              <div className="card" style={{background:'linear-gradient(135deg, rgba(21,128,61,0.12), rgba(0,212,255,0.06))', border:'1px solid rgba(21,128,61,0.3)'}}>
+                <h3 className="font-display font-700 text-white text-lg mb-4 flex items-center gap-2">
+                  <DollarSign size={18} className="text-green-400"/> 💰 Cost Savings Estimate
+                </h3>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  {[
+                    { label:'kW Saved',            value: results.kw_saved?.toFixed(2),                    unit:'kW',     color:'text-cyan-400'  },
+                    { label:'Energy Saved / Year',  value: results.energy_saved_kwh?.toLocaleString(),       unit:'kWh',    color:'text-blue-400'  },
+                    { label:'Cost Saved / Month',   value: results.cost_saved_monthly?.toLocaleString(undefined,{maximumFractionDigits:0}), unit:'/ month', color:'text-green-400' },
+                    { label:'Cost Saved / Year',    value: results.cost_saved_annual?.toLocaleString(undefined,{maximumFractionDigits:0}),  unit:'/ year',  color:'text-green-400' },
+                  ].map(({label, value, unit, color}) => (
+                    <div key={label} className="bg-black/20 rounded-xl p-4 text-center">
+                      <div className="text-slate-400 text-xs font-mono mb-1">{label}</div>
+                      <div className={`font-display font-800 text-2xl ${color}`}>{value}</div>
+                      <div className="text-slate-500 text-xs mt-0.5">{unit}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 pt-3 border-t border-white/8 flex flex-wrap gap-4 text-xs text-slate-500 font-mono">
+                  <span>Tariff: {results.cost_per_kwh} / kWh</span>
+                  <span>·</span>
+                  <span>{results.hours_per_day}h / day</span>
+                  <span>·</span>
+                  <span>{results.operating_days} days / year</span>
+                  <span>·</span>
+                  <span>Baseline: {results.baseline_electrical_power} kW → Optimal: {results.best_electrical_power} kW</span>
+                </div>
+              </div>
+            )}
 
             {/* Power Saving Bar */}
             <div className="card">
