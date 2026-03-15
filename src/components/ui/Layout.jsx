@@ -214,13 +214,17 @@ function AnalysisNavButton({ collapsed, onClick }) {
 
   const handleClick = () => {
     onClick?.()
-    // Use last visited unit from localStorage — instant, no API call
-    const lastUnit = localStorage.getItem('last_unit_id')
-    if (lastUnit) {
-      navigate(`/analysis/${lastUnit}`)
+    // Use unit ID from current URL first (most reliable)
+    const urlMatch = location.pathname.match(/\/analysis\/([^/]+)/)
+    const unitFromUrl = urlMatch ? urlMatch[1] : null
+    // Fallback to last saved unit in localStorage
+    const savedUnit = localStorage.getItem('last_unit_id')
+    const target = unitFromUrl || savedUnit
+
+    if (target) {
+      navigate(`/analysis/${target}`)
     } else {
       navigate('/dashboard')
-      toast('Select a compressor unit to start analysis.', { icon: '⚡', duration: 2500 })
     }
   }
 
@@ -237,7 +241,7 @@ function AnalysisNavButton({ collapsed, onClick }) {
         {!collapsed && (
           <motion.span initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
             className="font-display font-600 text-sm whitespace-nowrap flex-1 text-left">
-            Analysis
+            Optimization
           </motion.span>
         )}
       </AnimatePresence>
