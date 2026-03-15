@@ -229,6 +229,10 @@ export default function Analysis() {
           histogram_data:            results.histogram_data            || [],
           training_curve:            results.training_curve            || [],
           cluster_stats:             results.cluster_stats             || {},
+          kw_saved:            results.kw_saved            || 0,
+          energy_saved_kwh:    results.energy_saved_kwh    || 0,
+          cost_saved_annual:   results.cost_saved_annual   || 0,
+          cost_saved_monthly:  results.cost_saved_monthly  || 0,
         },
         user_params:    params,
         include_graphs: true,
@@ -545,48 +549,6 @@ export default function Analysis() {
                 </AnimatePresence>
               </div>
 
-              {/* Cost Savings Parameters */}
-              <div className="card space-y-4">
-                <h3 className="font-display font-600 text-green-400">💰 Cost Savings Parameters</h3>
-                <p className="text-slate-500 text-xs">Enter your electricity tariff to calculate annual cost savings. Leave 0 to skip cost calculation.</p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="label">Electricity Tariff</label>
-                    <div className="relative">
-                      <input type="number" step="0.01" min="0" className="input-field pr-20"
-                        placeholder="e.g. 35"
-                        value={params.cost_per_kwh || ''}
-                        onChange={e => setParams({...params, cost_per_kwh: +e.target.value})}/>
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-mono">per kWh</span>
-                    </div>
-                    <p className="text-xs text-slate-600 mt-1">Any currency — PKR, USD, etc.</p>
-                  </div>
-                  <div>
-                    <label className="label">Operating Hours / Day</label>
-                    <div className="relative">
-                      <input type="number" step="1" min="1" max="24" className="input-field pr-12"
-                        value={params.hours_per_day}
-                        onChange={e => setParams({...params, hours_per_day: Math.min(24, Math.max(1, +e.target.value))})}/>
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-mono">h/day</span>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <label className="label">Operating Days / Year</label>
-                  <div className="flex gap-3">
-                    {[365, 300, 250].map(d => (
-                      <button key={d} type="button"
-                        onClick={() => setParams({...params, operating_days: d})}
-                        className={`flex-1 py-2.5 rounded-xl border font-display font-600 text-sm transition-all ${
-                          params.operating_days === d
-                            ? 'bg-green-400/15 border-green-400/40 text-green-400'
-                            : 'border-white/10 text-slate-400 hover:border-white/20'
-                        }`}>{d} days</button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
               <div className="flex gap-3">
                 <button onClick={() => setStep('upload')} className="btn-ghost flex-1 py-2.5 text-sm">← Back</button>
                 <motion.button whileHover={{scale:1.01}} whileTap={{scale:0.98}} onClick={runAnalysis}
@@ -677,19 +639,19 @@ export default function Analysis() {
               ))}
             </div>
 
-            {/* Energy & Cost Savings Card — always shown when saving > 0 */}
+            {/* Energy & Cost Savings Card — always visible when saving > 0 */}
             {(results.kw_saved > 0 || results.power_saving_percent > 0) && (
               <div className="card" style={{background:'linear-gradient(135deg,rgba(21,128,61,0.1),rgba(0,212,255,0.05))',border:'1px solid rgba(21,128,61,0.25)'}}>
                 <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                   <h3 className="font-display font-700 text-white text-lg">⚡ Energy & Cost Savings</h3>
                   {!results.cost_per_kwh && (
-                    <span className="text-xs text-yellow-400/70 font-mono bg-yellow-400/10 px-2 py-1 rounded-lg">
+                    <span className="text-xs text-yellow-400/80 font-mono px-2 py-1 rounded-lg"
+                      style={{background:'rgba(250,204,21,0.08)',border:'1px solid rgba(250,204,21,0.2)'}}>
                       Enter tariff in Parameters to see cost savings
                     </span>
                   )}
                 </div>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* Always show: kW saved + energy units */}
                   <div className="bg-black/20 rounded-xl p-4 text-center">
                     <div className="text-slate-400 text-xs font-mono mb-1">kW Saved</div>
                     <div className="font-display font-800 text-2xl text-cyan-400">{results.kw_saved?.toFixed(4)}</div>
@@ -700,25 +662,23 @@ export default function Analysis() {
                     <div className="font-display font-800 text-2xl text-blue-400">{results.energy_saved_kwh?.toLocaleString(undefined,{maximumFractionDigits:1})}</div>
                     <div className="text-slate-500 text-xs mt-0.5">kWh</div>
                   </div>
-                  {/* Cost cards: show value if tariff set, else show hint */}
                   <div className="bg-black/20 rounded-xl p-4 text-center">
                     <div className="text-slate-400 text-xs font-mono mb-1">Cost Saved / Month</div>
                     {results.cost_per_kwh > 0
                       ? <div className="font-display font-800 text-2xl text-green-400">{results.cost_saved_monthly?.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
-                      : <div className="font-display font-800 text-xl text-slate-600">—</div>}
-                    <div className="text-slate-500 text-xs mt-0.5">{results.cost_per_kwh > 0 ? `/ month` : 'set tariff'}</div>
+                      : <div className="font-mono text-slate-600 text-xl mt-1">—</div>}
+                    <div className="text-slate-500 text-xs mt-0.5">{results.cost_per_kwh > 0 ? '/ month' : 'set tariff'}</div>
                   </div>
                   <div className="bg-black/20 rounded-xl p-4 text-center">
                     <div className="text-slate-400 text-xs font-mono mb-1">Cost Saved / Year</div>
                     {results.cost_per_kwh > 0
                       ? <div className="font-display font-800 text-2xl text-green-400">{results.cost_saved_annual?.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
-                      : <div className="font-display font-800 text-xl text-slate-600">—</div>}
-                    <div className="text-slate-500 text-xs mt-0.5">{results.cost_per_kwh > 0 ? `/ year` : 'set tariff'}</div>
+                      : <div className="font-mono text-slate-600 text-xl mt-1">—</div>}
+                    <div className="text-slate-500 text-xs mt-0.5">{results.cost_per_kwh > 0 ? '/ year' : 'set tariff'}</div>
                   </div>
                 </div>
                 <div className="mt-3 pt-3 border-t border-white/8 text-xs text-slate-500 font-mono flex flex-wrap gap-3">
-                  <span>Baseline: {results.baseline_electrical_power} kW</span>
-                  <span>→ Optimal: {results.best_electrical_power} kW</span>
+                  <span>Baseline: {results.baseline_electrical_power} kW → Optimal: {results.best_electrical_power} kW</span>
                   <span>· {results.hours_per_day || 24}h/day · {results.operating_days || 365} days/yr</span>
                   {results.cost_per_kwh > 0 && <span>· Tariff: {results.cost_per_kwh}/kWh</span>}
                 </div>
