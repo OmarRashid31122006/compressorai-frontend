@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../utils/api'
-import useAuthStore from '../store/authStore'
 import toast from 'react-hot-toast'
 import {
   FileText, Download, Activity, Calendar, ChevronRight,
@@ -15,38 +14,15 @@ export default function Reports() {
   const [loading, setLoading]   = useState(true)
   const [expanded, setExpanded] = useState({})
   const navigate = useNavigate()
-  const { user } = useAuthStore()
-  const isAdmin = user?.role === 'admin'
 
   useEffect(() => {
     const load = async () => {
       try {
-        let us = []
-
-        if (isAdmin) {
-          // Admin: fetch all compressor types, then get all units under each type
-          const typesRes = await api.get('/compressors/types')
-          const types = Array.isArray(typesRes.data) ? typesRes.data : []
-          // Fetch units for every type in parallel
-          const unitArrays = await Promise.all(
-            types.map(async t => {
-              try {
-                const r = await api.get(`/compressors/units?type_id=${t.id}`)
-                const arr = Array.isArray(r.data) ? r.data : (r.data?.results ?? r.data?.units ?? [])
-                // Attach type info so unit cards render correctly
-                return arr.map(u => ({ ...u, type: u.type || t }))
-              } catch { return [] }
-            })
-          )
-          us = unitArrays.flat()
-        } else {
-          // Engineer: only their linked units
-          const unitRes = await api.get('/compressors/units/my')
-          us = Array.isArray(unitRes.data)
-            ? unitRes.data
-            : (unitRes.data?.items || unitRes.data?.units || [])
-        }
-
+        // v5: fetch engineer's linked units, then history per unit
+        const unitRes = await api.get('/compressors/units/my')
+        const us = Array.isArray(unitRes.data)
+          ? unitRes.data
+          : (unitRes.data?.items || unitRes.data?.units || [])
         setUnits(us)
         // Expand first unit by default
         if (us.length) setExpanded({ [us[0].id]: true })
