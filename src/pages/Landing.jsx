@@ -142,7 +142,7 @@ export default function Landing() {
               className="grid grid-cols-4 gap-4 pt-5 border-t border-white/5">
               {[
                 { val:'95%+',   label:'Model Accuracy'  },
-                { val:'2–20%',  label:'Energy Saving'   },
+                { val:'2% – 20%+',  label:'Energy Saving'   },
                 { val:'3-Step', label:'ML Pipeline'     },
                 { val:'∞',      label:'Compressors'     },
               ].map(({ val, label }) => (
