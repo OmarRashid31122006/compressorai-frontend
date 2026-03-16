@@ -21,6 +21,14 @@ function PrivateRoute({ children }) {
   return isAuthenticated ? children : <Navigate to="/login" replace />
 }
 
+// Engineers only — admins redirected to /admin
+function EngineerRoute({ children }) {
+  const { isAuthenticated, user } = useAuthStore()
+  if (!isAuthenticated) return <Navigate to="/login" replace />
+  if (user?.role === 'admin') return <Navigate to="/admin" replace />
+  return children
+}
+
 function GuestRoute({ children }) {
   const { isAuthenticated } = useAuthStore()
   return !isAuthenticated ? children : <Navigate to="/dashboard" replace />
@@ -94,7 +102,7 @@ export default function App() {
         }/>
 
         <Route path="/reports" element={
-          <PrivateRoute><AppWithLayout><Reports /></AppWithLayout></PrivateRoute>
+          <EngineerRoute><AppWithLayout><Reports /></AppWithLayout></EngineerRoute>
         }/>
         <Route path="/settings" element={
           <PrivateRoute><AppWithLayout><Settings /></AppWithLayout></PrivateRoute>
