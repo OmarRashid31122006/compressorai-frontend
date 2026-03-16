@@ -1,287 +1,259 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import api from '../utils/api'
 import toast from 'react-hot-toast'
 import {
-  FileText, Download, Activity, Calendar, ChevronRight,
-  TrendingDown, Zap, RefreshCw, Database, Cpu
+  BarChart3, Activity, TrendingDown, Zap, RefreshCw,
+  Cpu, FileText, MapPin, Tag
 } from 'lucide-react'
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer
+} from 'recharts'
 
+// ── Single unit performance card ─────────────────────────────
+function UnitStatsCard({ unit, stats, i }) {
+  const navigate = useNavigate()
+  const hasData  = stats && stats.total_analyses > 0
+
+  return (
+    <motion.div
+      initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay: i * 0.07 }}
+      className="card space-y-5"
+      style={{ border: '1px solid rgba(255,255,255,0.07)' }}>
+
+      {/* ── Header ── */}
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center flex-shrink-0">
+            <Cpu size={20} className="text-yellow-400"/>
+          </div>
+          <div>
+            <div className="font-display font-700 text-white text-lg leading-tight">
+              {unit.unit_id}
+            </div>
+            <div className="text-slate-500 text-xs font-mono mt-0.5 flex items-center gap-2">
+              <span>{unit.type?.name || '—'}</span>
+              {unit.location && (
+                <>
+                  <span className="text-slate-700">·</span>
+                  <span className="flex items-center gap-1">
+                    <MapPin size={9}/>{unit.location}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={() => navigate(`/analysis/${unit.id}`)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-display font-600 transition-all flex-shrink-0"
+          style={{ background:'rgba(0,212,255,0.08)', border:'1px solid rgba(0,212,255,0.2)', color:'#00d4ff' }}
+          onMouseEnter={e => e.currentTarget.style.background='rgba(0,212,255,0.15)'}
+          onMouseLeave={e => e.currentTarget.style.background='rgba(0,212,255,0.08)'}>
+          <BarChart3 size={12}/> New Analysis
+        </button>
+      </div>
+
+      {/* ── No data state ── */}
+      {!hasData ? (
+        <div className="rounded-xl py-8 text-center"
+          style={{ background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.05)' }}>
+          <Activity size={28} className="text-slate-700 mx-auto mb-3"/>
+          <p className="text-slate-500 text-sm">No analyses run yet</p>
+          <button
+            onClick={() => navigate(`/analysis/${unit.id}`)}
+            className="mt-3 text-xs text-yellow-400 hover:text-yellow-300 font-display font-600 transition-colors">
+            Run first analysis →
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* ── KPI row ── */}
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: 'Total Analyses', value: stats.total_analyses,                                    color: 'text-cyan-400'  },
+              { label: 'Best Saving',    value: `${stats.best_power_saving_percent ?? 0}%`,              color: 'text-green-400' },
+              { label: 'Avg Saving',     value: `${(stats.avg_power_saving_percent ?? 0).toFixed(1)}%`, color: 'text-blue-400'  },
+            ].map(({ label, value, color }) => (
+              <div key={label} className="rounded-xl p-3 text-center"
+                style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)' }}>
+                <div className={`font-display font-800 text-xl ${color}`}>{value}</div>
+                <div className="text-slate-500 text-xs mt-1">{label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* ── Trend chart ── */}
+          {stats.analysis_trend?.length > 1 && (
+            <div>
+              <p className="text-slate-500 text-xs font-mono mb-3 flex items-center gap-1.5">
+                <TrendingDown size={11}/> Energy Saving Trend
+              </p>
+              <ResponsiveContainer width="100%" height={160}>
+                <LineChart data={[...stats.analysis_trend].reverse()}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e3a5f"/>
+                  <XAxis dataKey="date" stroke="#64748b" tick={{ fontSize:10 }}/>
+                  <YAxis stroke="#64748b" tick={{ fontSize:10 }} unit="%"/>
+                  <Tooltip
+                    contentStyle={{ background:'#0d1a2e', border:'1px solid rgba(0,212,255,0.2)', borderRadius:'8px', fontSize:'12px' }}
+                    formatter={v => [`${v}%`, 'Saving']}
+                  />
+                  <Line
+                    type="monotone" dataKey="saving_pct" stroke="#00d4ff"
+                    strokeWidth={2} dot={{ fill:'#00d4ff', r:3 }} name="Saving %"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* ── Generate report prompt ── */}
+          <div className="rounded-xl px-4 py-3 flex items-center justify-between"
+            style={{ background:'rgba(250,204,21,0.04)', border:'1px solid rgba(250,204,21,0.1)' }}>
+            <div className="flex items-center gap-2">
+              <FileText size={14} className="text-yellow-400"/>
+              <span className="text-slate-400 text-xs">
+                To download a report, run an analysis and use the
+                <span className="text-yellow-400 font-600"> Excel / PDF </span>
+                buttons on the results page.
+              </span>
+            </div>
+            <button
+              onClick={() => navigate(`/analysis/${unit.id}`)}
+              className="text-xs text-yellow-400 hover:text-yellow-300 font-display font-600 transition-colors whitespace-nowrap ml-3">
+              Go →
+            </button>
+          </div>
+        </>
+      )}
+    </motion.div>
+  )
+}
+
+// ── Main Page ─────────────────────────────────────────────────
 export default function Reports() {
-  const [units, setUnits]       = useState([])
-  const [analyses, setAnalyses] = useState({})
-  const [loading, setLoading]   = useState(true)
-  const [expanded, setExpanded] = useState({})
+  const [units,   setUnits]   = useState([])
+  const [statsMap, setStats]  = useState({})
+  const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        // v5: fetch engineer's linked units, then history per unit
-        const unitRes = await api.get('/compressors/units/my')
-        const us = Array.isArray(unitRes.data)
-          ? unitRes.data
-          : (unitRes.data?.items || unitRes.data?.units || [])
-        setUnits(us)
-        // Expand first unit by default
-        if (us.length) setExpanded({ [us[0].id]: true })
-        // Load history for all units in parallel
-        // Backend stores analyses against dataset_id, not unit_id directly.
-        // So: unit → datasets → per-dataset analysis history
-        const hist = {}
-        await Promise.all(us.map(async u => {
-          try {
-            // Step 1: get all datasets for this unit
-            const dsRes = await api.get(`/datasets/my/${u.id}`)
-            const datasets = Array.isArray(dsRes.data) ? dsRes.data : (dsRes.data?.data || dsRes.data?.items || [])
-
-            // Step 2: for each dataset, fetch its analysis history
-            const perDataset = await Promise.all(
-              datasets.map(async ds => {
-                try {
-                  const r = await api.get(`/analysis/history/${ds.id}?limit=50`)
-                  let records = []
-                  if (Array.isArray(r.data)) {
-                    records = r.data
-                  } else if (r.data && typeof r.data === 'object') {
-                    records = r.data.data || r.data.items || r.data.results ||
-                              r.data.analyses || r.data.history || []
-                  }
-                  // Attach dataset info to each record for display
-                  return (Array.isArray(records) ? records : []).map(a => ({
-                    ...a,
-                    dataset: a.dataset ?? {
-                      id: ds.id,
-                      original_filename: ds.original_filename,
-                      clean_rows: ds.clean_rows ?? ds.total_rows,
-                    },
-                    dataset_id: a.dataset_id ?? ds.id,
-                  }))
-                } catch { return [] }
-              })
-            )
-            // Flatten all dataset histories into one list, newest first
-            const all = perDataset.flat()
-            all.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
-            hist[u.id] = all
-          } catch {
-            hist[u.id] = []
-          }
-        }))
-        setAnalyses(hist)
-      } catch { toast.error('Failed to load') }
-      finally { setLoading(false) }
-    }
-    load()
-  }, [])
-
-  const downloadReport = async (type, unit, result) => {
+  const load = async () => {
+    setLoading(true)
     try {
-      // Fetch full analysis result from backend if we don't have analysis_results object
-      let analysisData = result
-      if (!result.scores && result.id) {
+      // Fetch engineer's linked units
+      const r  = await api.get('/compressors/units/my')
+      const us = Array.isArray(r.data)
+        ? r.data
+        : (r.data?.items || r.data?.units || [])
+      setUnits(us)
+
+      // Fetch stats for every unit in parallel (this endpoint works ✅)
+      const sm = {}
+      await Promise.all(us.map(async u => {
         try {
-          const r = await api.get(`/analysis/result/${result.id}`)
-          analysisData = r.data
-        } catch { /* use what we have */ }
-      }
-
-      const payload = {
-        compressor_id:    unit.id,
-        compressor_name:  `${unit.unit_id} - ${unit.type?.name || 'Compressor'}`,
-        company_name:     unit.location || 'Industrial Facility',
-        analysis_results: {
-          power_saving_percent:      analysisData.power_saving_percent      || 0,
-          best_electrical_power:     analysisData.best_electrical_power     || 0,
-          best_mechanical_power:     analysisData.best_mechanical_power     || 0,
-          baseline_electrical_power: analysisData.baseline_electrical_power || 0,
-          best_spc:                  analysisData.best_spc                  || 0,
-          scores:                    analysisData.scores                    || {},
-          optimal_parameters:        analysisData.optimal_parameters        || {},
-          feature_importance:        analysisData.feature_importance        || {},
-          scatter_data:              analysisData.scatter_data              || [],
-          cluster_data:              analysisData.cluster_data              || [],
-          histogram_data:            analysisData.histogram_data            || [],
-          training_curve:            analysisData.training_curve            || [],
-          cluster_stats:             analysisData.cluster_stats             || {},
-          kw_saved:            analysisData.kw_saved            || 0,
-          energy_saved_kwh:    analysisData.energy_saved_kwh    || 0,
-          cost_saved_annual:   analysisData.cost_saved_annual   || 0,
-          cost_saved_monthly:  analysisData.cost_saved_monthly  || 0,
-        },
-        user_params:    analysisData.user_params || {},
-        include_graphs: true,
-      }
-
-      const res = await api.post(`/reports/${type}`, payload, { responseType: 'blob' })
-      const url = URL.createObjectURL(new Blob([res.data]))
-      const a   = document.createElement('a')
-      a.href     = url
-      a.download = `report_${result.id?.slice(0,8)}.${type === 'pdf' ? 'pdf' : 'xlsx'}`
-      a.click()
-      URL.revokeObjectURL(url)
-      toast.success(`${type.toUpperCase()} report downloaded!`)
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Download failed')
+          const s   = await api.get(`/compressors/units/${u.id}/stats`)
+          sm[u.id]  = s.data
+        } catch { sm[u.id] = null }
+      }))
+      setStats(sm)
+    } catch {
+      toast.error('Failed to load reports')
+    } finally {
+      setLoading(false)
     }
   }
 
+  useEffect(() => { load() }, [])
+
+  // ── Loading ───────────────────────────────────────────────
   if (loading) return (
     <div className="flex items-center justify-center h-64">
       <div className="text-center">
         <div className="spinner-yellow w-12 h-12 mx-auto mb-4"/>
-        <p className="text-slate-400 font-mono text-sm">Loading reports...</p>
+        <p className="text-slate-400 font-mono text-sm">Loading performance data...</p>
       </div>
     </div>
   )
 
-  return (
+  // ── Empty ─────────────────────────────────────────────────
+  if (units.length === 0) return (
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="font-display text-3xl font-800 text-white">Reports</h1>
-          <p className="text-slate-400 text-sm mt-1">View and download analysis history</p>
+          <p className="text-slate-400 text-sm mt-1">Performance overview per compressor unit</p>
         </div>
-        <button onClick={() => window.location.reload()}
+        <button onClick={load}
+          className="p-2.5 text-slate-400 hover:text-yellow-400 transition-colors rounded-xl hover:bg-yellow-400/10">
+          <RefreshCw size={18}/>
+        </button>
+      </div>
+      <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}}
+        className="card text-center py-20"
+        style={{ border:'1px solid rgba(255,255,255,0.07)' }}>
+        <Cpu size={36} className="text-slate-700 mx-auto mb-4"/>
+        <h3 className="font-display font-700 text-white text-xl mb-2">No Units Linked</h3>
+        <p className="text-slate-500 text-sm mb-6">Add a compressor unit to start running analyses</p>
+        <button onClick={() => navigate('/dashboard')}
+          className="btn-primary inline-flex items-center gap-2 px-6 py-2.5 text-sm">
+          <Cpu size={14}/> Go to Dashboard
+        </button>
+      </motion.div>
+    </div>
+  )
+
+  // ── Main ──────────────────────────────────────────────────
+  const totalAnalyses = Object.values(statsMap).reduce((s, st) => s + (st?.total_analyses || 0), 0)
+  const unitsWithData = Object.values(statsMap).filter(st => st?.total_analyses > 0).length
+
+  return (
+    <div className="space-y-6">
+
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="font-display text-3xl font-800 text-white">Reports</h1>
+          <p className="text-slate-400 text-sm mt-1">Performance overview per compressor unit</p>
+        </div>
+        <button onClick={load}
           className="p-2.5 text-slate-400 hover:text-yellow-400 transition-colors rounded-xl hover:bg-yellow-400/10">
           <RefreshCw size={18}/>
         </button>
       </div>
 
-      {units.length === 0 ? (
-        <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}}
-          className="card text-center py-20" style={{border:'1px solid rgba(255,255,255,0.07)'}}>
-          <FileText size={36} className="text-slate-600 mx-auto mb-4"/>
-          <h3 className="font-display font-700 text-white text-xl mb-2">No Reports Yet</h3>
-          <p className="text-slate-500 text-sm mb-6">Run your first analysis to generate reports</p>
-          <button onClick={() => navigate('/dashboard')}
-            className="btn-primary inline-flex items-center gap-2 px-6 py-2.5 text-sm">
-            <Cpu size={14}/> Go to Dashboard
-          </button>
+      {/* Summary bar */}
+      {totalAnalyses > 0 && (
+        <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}}
+          className="grid grid-cols-3 gap-4">
+          {[
+            { label:'Total Units',      value: units.length,    color:'text-yellow-400' },
+            { label:'Total Analyses',   value: totalAnalyses,   color:'text-cyan-400'   },
+            { label:'Units Optimized',  value: unitsWithData,   color:'text-green-400'  },
+          ].map(({ label, value, color }) => (
+            <div key={label} className="card text-center py-4"
+              style={{ border:'1px solid rgba(255,255,255,0.06)' }}>
+              <div className={`font-display font-800 text-2xl ${color}`}>{value}</div>
+              <div className="text-slate-500 text-xs mt-1">{label}</div>
+            </div>
+          ))}
         </motion.div>
-      ) : (
-        <div className="space-y-3">
-          {units.map((unit, i) => {
-            const results  = analyses[unit.id] || []
-            const isOpen   = expanded[unit.id]
-            const avgSaving = results.length
-              ? results.reduce((s,r) => s + (r.power_saving_percent||0), 0) / results.length
-              : null
-
-            return (
-              <motion.div key={unit.id} initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:i*0.05}}
-                className="card" style={{border:'1px solid rgba(255,255,255,0.07)'}}>
-
-                {/* Unit header — click to expand */}
-                <div className="flex items-center justify-between cursor-pointer"
-                  onClick={() => setExpanded(p => ({...p, [unit.id]: !p[unit.id]}))}>
-                  <h2 className="font-display font-700 text-white text-lg flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center">
-                      <Cpu size={16} className="text-yellow-400"/>
-                    </div>
-                    <div>
-                      <div>{unit.unit_id}</div>
-                      <div className="text-slate-500 text-xs font-mono font-400 mt-0.5">{unit.type?.name} · {unit.location || 'No location'}</div>
-                    </div>
-                  </h2>
-                  <div className="flex items-center gap-3">
-                    <span className="tag-yellow">{results.length} analyses</span>
-                    {avgSaving != null && (
-                      <span className="text-xs text-green-400 font-mono flex items-center gap-1">
-                        <TrendingDown size={10}/>{avgSaving.toFixed(1)}% avg
-                      </span>
-                    )}
-                    <button onClick={e => { e.stopPropagation(); navigate(`/analysis/${unit.id}`) }}
-                      className="text-xs text-cyan-400 hover:text-cyan-300 font-display font-600 transition-colors flex items-center gap-1">
-                      <Activity size={12}/> New Analysis
-                    </button>
-                    <ChevronRight size={16} className={`text-slate-500 transition-transform ${isOpen ? 'rotate-90' : ''}`}/>
-                  </div>
-                </div>
-
-                {/* Analysis history list */}
-                <AnimatePresence>
-                  {isOpen && (
-                    <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}} exit={{height:0,opacity:0}}
-                      className="overflow-hidden">
-                      <div className="mt-4 pt-4 border-t border-white/6">
-                        {results.length === 0 ? (
-                          <p className="text-slate-500 text-sm font-mono py-4">
-                            No analyses yet.{' '}
-                            <button onClick={() => navigate(`/analysis/${unit.id}`)}
-                              className="text-yellow-400 hover:underline">Run first analysis!</button>
-                          </p>
-                        ) : (
-                          <div className="space-y-2">
-                            {results.map(a => (
-                              <div key={a.id}
-                                className="flex items-center justify-between bg-primary-800/50 rounded-xl px-4 py-3 group hover:bg-primary-800/80 transition-colors">
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <Database size={13} className="text-slate-500"/>
-                                    <span className="text-sm text-slate-200 font-display font-500 truncate max-w-[220px]">
-                                      {a.dataset?.original_filename || a.filename || 'Dataset'}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-3 mt-1 text-xs text-slate-500 font-mono">
-                                    <span className="flex items-center gap-1">
-                                      <Calendar size={10}/>{a.created_at?.substring(0,10)}
-                                    </span>
-                                    {a.dataset?.clean_rows && <span>{a.dataset.clean_rows} rows</span>}
-                                    {a.power_saving_percent != null && (
-                                      <span className="text-green-400 flex items-center gap-0.5">
-                                        <TrendingDown size={10}/>-{a.power_saving_percent?.toFixed(1)}% energy
-                                      </span>
-                                    )}
-                                    {a.best_electrical_power != null && (
-                                      <span className="text-cyan-400 flex items-center gap-0.5">
-                                        <Zap size={10}/>{a.best_electrical_power?.toFixed(1)} kW
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  {a.scores && (
-                                    <span className="text-xs font-mono text-cyan-400">
-                                      R²: {(a.scores.r2 || 0).toFixed(0)}%
-                                    </span>
-                                  )}
-                                  {/* Re-run with same dataset */}
-                                  {a.dataset_id && (
-                                    <button
-                                      onClick={() => navigate(`/analysis/${unit.id}/${a.dataset_id}`)}
-                                      className="p-1.5 text-slate-500 hover:text-yellow-400 rounded-lg hover:bg-yellow-400/10 transition-all"
-                                      title="Re-run analysis">
-                                      <Activity size={13}/>
-                                    </button>
-                                  )}
-                                  <button
-                                    onClick={() => downloadReport('excel', unit, a)}
-                                    className="p-1.5 text-slate-500 hover:text-green-400 rounded-lg hover:bg-green-400/10 transition-all"
-                                    title="Download Excel">
-                                    <Download size={13}/>
-                                  </button>
-                                  <button
-                                    onClick={() => downloadReport('pdf', unit, a)}
-                                    className="p-1.5 text-slate-500 hover:text-cyan-400 rounded-lg hover:bg-cyan-400/10 transition-all"
-                                    title="Download PDF">
-                                    <FileText size={13}/>
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            )
-          })}
-        </div>
       )}
+
+      {/* Per-unit cards */}
+      <div className="space-y-4">
+        {units.map((unit, i) => (
+          <UnitStatsCard
+            key={unit.id}
+            unit={unit}
+            stats={statsMap[unit.id]}
+            i={i}
+          />
+        ))}
+      </div>
+
     </div>
   )
 }
