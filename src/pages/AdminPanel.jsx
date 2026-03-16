@@ -291,29 +291,48 @@ export default function AdminPanel() {
         </button>
       </div>
 
-      {/* KPIs */}
-      {stats && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { label: 'Total Users',      value: stats.total_users,                                        icon: Users,       color: 'cyan'   },
-            { label: 'Active Users',     value: stats.active_users,                                       icon: CheckCircle, color: 'green'  },
-            { label: 'Total Analyses',   value: stats.total_analyses,                                     icon: Activity,    color: 'blue'   },
-            { label: 'Avg Power Saving', value: `${stats.avg_power_saving_percent?.toFixed(1) || 0}%`,   icon: TrendingDown,color: 'orange' },
-          ].map(({ label, value, icon: Icon, color }) => (
-            <div key={label} className="card">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${
-                color === 'cyan' ? 'bg-cyan-400/10' : color === 'green' ? 'bg-green-400/10' : color === 'blue' ? 'bg-blue-400/10' : 'bg-orange-400/10'
-              }`}>
-                <Icon size={18} className={`${
-                  color === 'cyan' ? 'text-cyan-400' : color === 'green' ? 'text-green-400' : color === 'blue' ? 'text-blue-400' : 'text-orange-400'
-                }`} />
-              </div>
-              <div className="font-display font-800 text-2xl text-white">{value}</div>
-              <div className="text-slate-400 text-xs mt-1">{label}</div>
+      {/* KPIs — Total Users & Active Users from /admin/stats (reliable),
+               Compressor Types & Total Units derived locally from fetched types array */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          {
+            label: 'Total Users',
+            value: stats?.total_users ?? users.length,
+            icon: Users,
+            color: 'cyan',
+          },
+          {
+            label: 'Active Users',
+            value: stats?.active_users ?? users.filter(u => u.is_active !== false).length,
+            icon: CheckCircle,
+            color: 'green',
+          },
+          {
+            label: 'Compressor Types',
+            value: types.length,
+            icon: Layers,
+            color: 'blue',
+          },
+          {
+            label: 'Total Units',
+            value: types.reduce((sum, t) => sum + (t.unit_count ?? 0), 0),
+            icon: Cpu,
+            color: 'orange',
+          },
+        ].map(({ label, value, icon: Icon, color }) => (
+          <div key={label} className="card">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${
+              color === 'cyan' ? 'bg-cyan-400/10' : color === 'green' ? 'bg-green-400/10' : color === 'blue' ? 'bg-blue-400/10' : 'bg-orange-400/10'
+            }`}>
+              <Icon size={18} className={`${
+                color === 'cyan' ? 'text-cyan-400' : color === 'green' ? 'text-green-400' : color === 'blue' ? 'text-blue-400' : 'text-orange-400'
+              }`} />
             </div>
-          ))}
-        </div>
-      )}
+            <div className="font-display font-800 text-2xl text-white">{value ?? '—'}</div>
+            <div className="text-slate-400 text-xs mt-1">{label}</div>
+          </div>
+        ))}
+      </div>
 
       {/* Tabs */}
       <div className="flex gap-1 p-1 rounded-xl w-fit"
