@@ -551,13 +551,37 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Admin KPIs */}
-      {stats && (
+      {/* Admin KPIs — derived from locally fetched types array so values are always accurate */}
+      {isAdmin && units.length > 0 && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <KPICard label="Compressor Types"  value={stats.total_compressor_units ?? stats.total_compressors} icon={Layers}       color="yellow" delay={0}   />
-          <KPICard label="Total Analyses"    value={stats.total_analyses}                                       icon={Activity}     color="cyan"   delay={0.1} />
-          <KPICard label="Avg Energy Saving" value={stats.avg_power_saving_percent?.toFixed(1)} unit="%"        icon={TrendingDown} color="green"  delay={0.2} />
-          <KPICard label="Active Engineers"  value={stats.total_engineers ?? stats.active_users}                icon={Users}        color="white"  delay={0.3} />
+          <KPICard
+            label="Compressor Types"
+            value={units.length}
+            icon={Layers}
+            color="yellow"
+            delay={0}
+          />
+          <KPICard
+            label="Total Units"
+            value={units.reduce((s, t) => s + (t.unit_count ?? 0), 0)}
+            icon={Cpu}
+            color="cyan"
+            delay={0.1}
+          />
+          <KPICard
+            label="Models Trained"
+            value={units.filter(t => t.ml_model).length}
+            icon={Brain}
+            color="green"
+            delay={0.2}
+          />
+          <KPICard
+            label="Active Engineers"
+            value={stats?.total_engineers ?? stats?.active_users ?? '—'}
+            icon={Users}
+            color="white"
+            delay={0.3}
+          />
         </div>
       )}
 
