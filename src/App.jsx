@@ -9,7 +9,6 @@ import Register   from './pages/Register'
 import VerifyEmail from './pages/VerifyEmail'
 import Dashboard  from './pages/Dashboard'
 import Analysis   from './pages/Analysis'
-import Reports    from './pages/Reports'
 import Settings   from './pages/Settings'
 import Tutorial   from './pages/Tutorial'
 import AdminPanel from './pages/AdminPanel'
@@ -19,14 +18,6 @@ import Layout     from './components/ui/Layout'
 function PrivateRoute({ children }) {
   const { isAuthenticated } = useAuthStore()
   return isAuthenticated ? children : <Navigate to="/login" replace />
-}
-
-// Engineers only — admins redirected to /admin
-function EngineerRoute({ children }) {
-  const { isAuthenticated, user } = useAuthStore()
-  if (!isAuthenticated) return <Navigate to="/login" replace />
-  if (user?.role === 'admin') return <Navigate to="/admin" replace />
-  return children
 }
 
 function GuestRoute({ children }) {
@@ -42,7 +33,6 @@ function AppWithLayout({ children }) {
 export default function App() {
   const { fetchMe, isAuthenticated, isLoading } = useAuthStore()
 
-  // On every page load / refresh — re-validate token with backend
   useEffect(() => {
     if (isAuthenticated) fetchMe()
   }, []) // eslint-disable-line
@@ -88,12 +78,6 @@ export default function App() {
           <PrivateRoute><AppWithLayout><Dashboard /></AppWithLayout></PrivateRoute>
         }/>
 
-        {/*
-          Analysis routes — v5:
-          1. /analysis/:unitId              → unit selected, pick/upload dataset
-          2. /analysis/:unitId/:datasetId   → specific dataset pre-loaded, go straight to params
-          param name MUST match useParams() in Analysis.jsx → { unitId, datasetId }
-        */}
         <Route path="/analysis/:unitId" element={
           <PrivateRoute><AppWithLayout><Analysis /></AppWithLayout></PrivateRoute>
         }/>
@@ -101,9 +85,6 @@ export default function App() {
           <PrivateRoute><AppWithLayout><Analysis /></AppWithLayout></PrivateRoute>
         }/>
 
-        <Route path="/reports" element={
-          <EngineerRoute><AppWithLayout><Reports /></AppWithLayout></EngineerRoute>
-        }/>
         <Route path="/settings" element={
           <PrivateRoute><AppWithLayout><Settings /></AppWithLayout></PrivateRoute>
         }/>
