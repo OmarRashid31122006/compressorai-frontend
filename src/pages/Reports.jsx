@@ -27,25 +27,45 @@ export default function Reports() {
         // Expand first unit by default
         if (us.length) setExpanded({ [us[0].id]: true })
         // Load history for all units in parallel
+        // Backend stores analyses against dataset_id, not unit_id directly.
+        // So: unit → datasets → per-dataset analysis history
         const hist = {}
         await Promise.all(us.map(async u => {
           try {
-            const r = await api.get(`/analysis/history/${u.id}?limit=50`)
-            // Debug: log raw response to browser console
-            console.log(`[Reports] history for ${u.unit_id}:`, r.data)
-            // Handle every possible response shape
-            let records = []
-            if (Array.isArray(r.data)) {
-              records = r.data
-            } else if (r.data && typeof r.data === 'object') {
-              records = r.data.data || r.data.items || r.data.results ||
-                        r.data.analyses || r.data.history || r.data.records ||
-                        r.data.analysis || []
-            }
-            hist[u.id] = Array.isArray(records) ? records : []
-            console.log(`[Reports] parsed ${hist[u.id].length} records for ${u.unit_id}`)
-          } catch (err) {
-            console.error(`[Reports] failed for ${u.unit_id}:`, err?.response?.status, err?.response?.data)
+            // Step 1: get all datasets for this unit
+            const dsRes = await api.get(`/datasets/my/${u.id}`)
+            const datasets = Array.isArray(dsRes.data) ? dsRes.data : (dsRes.data?.data || dsRes.data?.items || [])
+
+            // Step 2: for each dataset, fetch its analysis history
+            const perDataset = await Promise.all(
+              datasets.map(async ds => {
+                try {
+                  const r = await api.get(`/analysis/history/${ds.id}?limit=50`)
+                  let records = []
+                  if (Array.isArray(r.data)) {
+                    records = r.data
+                  } else if (r.data && typeof r.data === 'object') {
+                    records = r.data.data || r.data.items || r.data.results ||
+                              r.data.analyses || r.data.history || []
+                  }
+                  // Attach dataset info to each record for display
+                  return (Array.isArray(records) ? records : []).map(a => ({
+                    ...a,
+                    dataset: a.dataset ?? {
+                      id: ds.id,
+                      original_filename: ds.original_filename,
+                      clean_rows: ds.clean_rows ?? ds.total_rows,
+                    },
+                    dataset_id: a.dataset_id ?? ds.id,
+                  }))
+                } catch { return [] }
+              })
+            )
+            // Flatten all dataset histories into one list, newest first
+            const all = perDataset.flat()
+            all.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+            hist[u.id] = all
+          } catch {
             hist[u.id] = []
           }
         }))
